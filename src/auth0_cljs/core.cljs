@@ -134,7 +134,7 @@
         (setup-polling-for-sso-logout! auth0-subdomain 5000)
         (go
           (let [resp (<!
-                       (auth0.ajax/get user-info-endpoint))
+                       (auth0-cljs.ajax/get user-info-endpoint))
                 user-info (:body resp)]
             (reset! user/logged-in-user user-info)
             (callback-fn user-info))))
