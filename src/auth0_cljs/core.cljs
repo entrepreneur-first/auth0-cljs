@@ -26,12 +26,12 @@
    lock
    (clj->js
     (merge
-     {:authParams       {:scope       "openid name picture"
-                         :access_type "offline"
-                         :state       (.-hash (.-location js/window))}
-      :callbackURL      callback-url
-      :responseType     "token"
-      :closable         false
+     {:authParams   {:scope       "openid name picture"
+                     :access_type "offline"
+                     :state       (.-hash (.-location js/window))}
+      :callbackURL  callback-url
+      :responseType "token"
+      :closable     false
       }
      overrides))))
 
@@ -123,19 +123,25 @@
          (set! (.-href (.-location js/window)) (or (.-state hash) ""))))
 
      (if (user/get-user-token)
-
        (do
          (setup-polling-for-sso-logout! auth0-subdomain 5000)
          (go
           (let [resp      (<!
                            (auth0-cljs.ajax/get user-info-endpoint))
                 user-info (:body resp)]
-            (reset! user/logged-in-user user-info)
-            (callback-fn user-info))))
+            (case (:status resp)
+              200 (do
+                    (reset! user/logged-in-user user-info)
+                    (callback-fn user-info))
+              401 (do
+                    (user/clear-user-token!)
+                    (set! (.-href (.-location js/window)) ""))
+              (.error js/console (str "Unexpected http request status: " (:status resp)))
+              )))
 
-       (do
-         (check-sso-status!
-          auth0-subdomain
-          (fn [_data] (attempt-signin! lock))
-          (fn [_data] (show-login-modal! lock (get-redirect-url (.-href (.-location js/window))) login-modal-overrides))
-          (fn [_err])))))))
+         (do
+           (check-sso-status!
+            auth0-subdomain
+            (fn [_data] (attempt-signin! lock))
+            (fn [_data] (show-login-modal! lock (get-redirect-url (.-href (.-location js/window))) login-modal-overrides))
+            (fn [_err])))))))
