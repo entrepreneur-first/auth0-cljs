@@ -20,27 +20,20 @@
                auth0-client-id))))
 
 (defn show-login-modal!
-  "Pops up the Auth0 login modal.
-
-  TODO: this should probably take some overrides."
-  [lock callback-url]
+  "Pops up the Auth0 login modal."
+  [lock callback-url overrides]
   (.show
    lock
-   (clj->js {:authParams       {:scope       "openid name picture"
-                                :access_type "offline"
-                                :state       (.-hash (.-location js/window))}
-             :callbackURL      callback-url
-             :responseType     "token"
-             :dict             {
-                                :signin {
-                                         :title "Log-in to EF"
-                                         }
-                                }
-             ; TODO: change this to a static file that we actually control
-             :icon             "https://s3-eu-west-1.amazonaws.com/e-core-production/uploads/company/517337fd17b87964ae0012d3/logo/EF_Solo_Black.png"
-             :socialBigButtons true
-             :closable         false
-             :primaryColor     "#051932"})))
+   (clj->js
+    (merge
+     {:authParams       {:scope       "openid name picture"
+                         :access_type "offline"
+                         :state       (.-hash (.-location js/window))}
+      :callbackURL      callback-url
+      :responseType     "token"
+      :closable         false
+      }
+     overrides))))
 
 (defn attempt-signin!
   "Attempts to sign-in automagically,
@@ -118,30 +111,31 @@
   (first (clojure.string/split href #"\#")))
 
 (defn ensure-logged-in!
-  [auth0-client-id auth0-subdomain user-info-endpoint callback-fn]
-    (let [lock (js/Auth0Lock. auth0-client-id (str auth0-subdomain ".auth0.com"))
-        hash (.parseHash lock (.-hash (.-location js/window)))]
+  ([auth0-client-id auth0-subdomain user-info-endpoint callback-fn] (ensure-logged-in! auth0-client-id auth0-subdomain user-info-endpoint callback-fn {}))
+  ([auth0-client-id auth0-subdomain user-info-endpoint callback-fn login-modal-overrides]
+   (let [lock (js/Auth0Lock. auth0-client-id (str auth0-subdomain ".auth0.com"))
+         hash (.parseHash lock (.-hash (.-location js/window)))]
 
-    (when hash
-      (when-let [id-token (aget hash "id_token")]
-        (user/set-user-token! id-token)
-        (.log js/console (str "State is: " (.-state hash)))
-        (set! (.-href (.-location js/window)) (or (.-state hash) ""))))
+     (when hash
+       (when-let [id-token (aget hash "id_token")]
+         (user/set-user-token! id-token)
+         (.log js/console (str "State is: " (.-state hash)))
+         (set! (.-href (.-location js/window)) (or (.-state hash) ""))))
 
-    (if (user/get-user-token)
+     (if (user/get-user-token)
 
-      (do
-        (setup-polling-for-sso-logout! auth0-subdomain 5000)
-        (go
-          (let [resp (<!
-                       (auth0-cljs.ajax/get user-info-endpoint))
+       (do
+         (setup-polling-for-sso-logout! auth0-subdomain 5000)
+         (go
+          (let [resp      (<!
+                           (auth0-cljs.ajax/get user-info-endpoint))
                 user-info (:body resp)]
             (reset! user/logged-in-user user-info)
             (callback-fn user-info))))
 
-      (do
-        (check-sso-status!
-         auth0-subdomain
-         (fn [_data] (attempt-signin! lock))
-         (fn [_data] (show-login-modal! lock (get-redirect-url (.-href (.-location js/window)))))
-         (fn [_err]))))))
+       (do
+         (check-sso-status!
+          auth0-subdomain
+          (fn [_data] (attempt-signin! lock))
+          (fn [_data] (show-login-modal! lock (get-redirect-url (.-href (.-location js/window))) login-modal-overrides))
+          (fn [_err])))))))
