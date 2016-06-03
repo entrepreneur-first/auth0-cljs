@@ -137,11 +137,11 @@
                     (user/clear-user-token!)
                     (set! (.-href (.-location js/window)) ""))
               (.error js/console (str "Unexpected http request status: " (:status resp)))
-              )))
+              ))))
 
-         (do
-           (check-sso-status!
-            auth0-subdomain
-            (fn [_data] (attempt-signin! lock))
-            (fn [_data] (show-login-modal! lock (get-redirect-url (.-href (.-location js/window))) login-modal-overrides))
-            (fn [_err])))))))
+       (do
+         (check-sso-status!
+          auth0-subdomain
+          (fn [_data] (attempt-signin! lock))
+          (fn [_data] (show-login-modal! lock (get-redirect-url (.-href (.-location js/window))) login-modal-overrides))
+          (fn [_err])))))))
