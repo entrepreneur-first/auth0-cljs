@@ -4,7 +4,8 @@
             [cljs-http.client :as http]
             [cljs.core.async :refer [<! timeout]]
             [auth0-cljs.user :as user]
-            [auth0-cljs.ajax]))
+            [auth0-cljs.ajax]
+            [cemerick.url :refer [url url-encode]]))
 
 (defn global-logout!
   "Clears OUR token, and does an SSO logout"
@@ -12,12 +13,9 @@
   (user/clear-user-token!)
   (let [location (.-location js/window)]
 
-    ; TODO: Don't use str for URL joining.. this is silly
     (set! (.-href location)
-          (str "https://" auth0-subdomain ".auth0.com/v2/logout?returnTo="
-               (.-href location)
-               "&client_id="
-               auth0-client-id))))
+          (str (url (str "https://" auth0-subdomain ".auth0.com") "/v2/logout" :query {:returnTo (.-href location) :client_id auth0-client-id}
+                    )))))
 
 (defn show-login-modal!
   "Pops up the Auth0 login modal."
@@ -52,7 +50,7 @@
   "Replacement for the idiotic auth0 version"
   [auth0-subdomain callback]
   (go
-   (let [resp (<! (http/get (str "https://" auth0-subdomain ".auth0.com" "/user/ssodata")
+   (let [resp (<! (http/get (str (url (str "https://" auth0-subdomain ".auth0.com") "/user/ssodata"))
                             {:timeout 5000}))]
      (if (= (:status resp) 200)
        (callback nil (:body resp))

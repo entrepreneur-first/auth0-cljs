@@ -9,4 +9,5 @@
                  [org.clojure/clojurescript "1.8.34"]
                  [org.clojure/core.async "0.2.374"]
                  [cljsjs/auth0-lock "8.1.5-1"]
-                 [cljs-http "0.1.37"]])
+                 [cljs-http "0.1.37"]
+                 [com.cemerick/url "0.1.1"]])
