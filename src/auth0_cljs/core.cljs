@@ -40,8 +40,8 @@
   "Replacement for the idiotic auth0 version"
   [auth0-subdomain callback]
   (go
-   (let [resp (<! (http/get (str (-> (url (str "https://" auth0-subdomain ".auth0.com") "/user/ssodata")
-                                     (assoc :timeout 5000)))))]
+   (let [resp (<! (http/get (str (url (str "https://" auth0-subdomain ".auth0.com") "/user/ssodata"))
+                            {:timeout 5000}))]
      (if (= (:status resp) 200)
        (callback nil (:body resp))
        (callback resp nil)))))
