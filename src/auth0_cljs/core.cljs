@@ -10,7 +10,7 @@
 (defn global-logout!
   "Clears OUR token, and does an SSO logout"
   [auth0-subdomain auth0-client-id]
-  (clear-user-token!)
+  (user/clear-user-token!)
   (let [location (.-location js/window)]
 
     (set! (.-href location)
