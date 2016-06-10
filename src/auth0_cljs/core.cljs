@@ -5,7 +5,17 @@
             [cljs.core.async :refer [<! timeout]]
             [auth0-cljs.user :as user]
             [auth0-cljs.ajax]
-            [cemerick.url :refer [url url-encode]]))
+            [cemerick.url :refer [url]]))
+
+(defn global-logout!
+  "Clears OUR token, and does an SSO logout"
+  [auth0-subdomain auth0-client-id]
+  (clear-user-token!)
+  (let [location (.-location js/window)]
+
+    (set! (.-href location)
+          (str (-> (url (str "https://" auth0-subdomain ".auth0.com") "/v2/logout")
+                   (assoc :query {:returnTo (.-href location) :client_id auth0-client-id}))))))
 
 (defn show-login-modal!
   "Pops up the Auth0 login modal."
