@@ -7,16 +7,6 @@
             [auth0-cljs.ajax]
             [cemerick.url :refer [url url-encode]]))
 
-(defn global-logout!
-  "Clears OUR token, and does an SSO logout"
-  [auth0-subdomain auth0-client-id]
-  (user/clear-user-token!)
-  (let [location (.-location js/window)]
-
-    (set! (.-href location)
-          (str (url (str "https://" auth0-subdomain ".auth0.com") "/v2/logout" :query {:returnTo (.-href location) :client_id auth0-client-id}
-                    )))))
-
 (defn show-login-modal!
   "Pops up the Auth0 login modal."
   [lock callback-url overrides]
@@ -131,11 +121,8 @@
               200 (do
                     (reset! user/logged-in-user user-info)
                     (callback-fn user-info))
-              401 (do
-                    (user/clear-user-token!)
-                    (set! (.-href (.-location js/window)) ""))
-              (.error js/console (str "Unexpected http request status: " (:status resp)))
-              ))))
+
+              (.error js/console (str "Unexpected http request status: " (:status resp)))))))
 
        (do
          (check-sso-status!
