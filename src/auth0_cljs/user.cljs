@@ -25,5 +25,5 @@
   (let [location (.-location js/window)]
 
     (set! (.-href location)
-          (str (url (str "https://" auth0-subdomain ".auth0.com") "/v2/logout" :query {:returnTo (.-href location) :client_id auth0-client-id}
-                    )))))
+          (str (-> (url (str "https://" auth0-subdomain ".auth0.com") "/v2/logout")
+                   (assoc :query {:returnTo (.-href location) :client_id auth0-client-id}))))))
