@@ -1,15 +1,29 @@
 (ns auth0-cljs.ajax
-  (:require [auth0-cljs.user :refer [get-user-token]]
-            [cljs-http.client :as http]))
+  (:require-macros [cljs.core.async.macros :refer [go]])
+  (:require
+            [cljs-http.client :as http]
+            [cljs.core.async :refer [<! >! chan]]
+            [auth0-cljs.user :as user]))
 
 (defn request
+  "WARNING - logs you out if the auth0-cljs user token is not set"
   [request-fn endpoint args]
-  (if-let [token (get-user-token)]
-    (let [header (str "Bearer " token)]
-      (request-fn endpoint (merge-with merge {:headers {"Authorization" header}} args)))
+  (let [response-channel (chan)]
+    (if-let [token (user/get-user-token)]
+      (go
+       (let [header (str "Bearer " token)
+             resp (<! (request-fn endpoint (merge-with merge {:headers {"Authorization" header}} args)))]
+         (if (= 401 (:status resp))
+           (do
+             (user/clear-user-token!)
+             (set! (.-href (.-location js/window)) ""))
+           (>! response-channel resp))))
 
-    ;; TODO: returning nil is bad here
-    nil))
+      (do
+        (user/clear-user-token!)
+        (set! (.-href (.-location js/window)) "")))
+
+    response-channel))
 
 (defn get
   ([endpoint] (get endpoint {}))
