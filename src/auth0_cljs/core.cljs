@@ -26,7 +26,7 @@
     (merge
      {:authParams   {:scope       "openid name picture"
                      :access_type "offline"
-                     :state       (.-hash (.-location js/window))}
+                     :state       (pr-str {:href (.-hash (.-location js/window))})}
       :callbackURL  callback-url
       :responseType "token"
       :closable     false
@@ -44,7 +44,7 @@
       {:callbackOnLocationHash true
        :scope                  "openid name picture"
        :sso                    true
-       :state                  (.-hash (.-location js/window))}))))
+       :state                  (pr-str {:href (.-hash (.-location js/window))})}))))
 
 (defn getSSOData
   "Replacement for the idiotic auth0 version"
@@ -108,6 +108,12 @@
   [href]
   (first (clojure.string/split href #"\#")))
 
+(defn safe-read-edn
+  [s]
+  (try
+    (cljs.reader/read-string s)
+    (catch :default e)))
+
 (defn ensure-logged-in!
   ([auth0-client-id auth0-subdomain user-info-endpoint callback-fn] (ensure-logged-in! auth0-client-id auth0-subdomain user-info-endpoint callback-fn {}))
   ([auth0-client-id auth0-subdomain user-info-endpoint callback-fn login-modal-overrides]
@@ -118,7 +124,7 @@
        (when-let [id-token (aget hash "id_token")]
          (user/set-user-token! id-token)
          (.log js/console (str "State is: " (.-state hash)))
-         (set! (.-href (.-location js/window)) (or (.-state hash) ""))))
+         (set! (.-href (.-location js/window)) (get (safe-read-edn (.-state hash)) :href ""))))
 
      (if (user/get-user-token)
        (do
