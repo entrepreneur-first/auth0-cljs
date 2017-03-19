@@ -2,9 +2,9 @@
 
 Documentation forthcoming...
 
-## License
+## Licence
 
-Copyright © 2016 Entrepreneur First
+© 2016-2017 Entrepreneur First Operations Ltd.
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
