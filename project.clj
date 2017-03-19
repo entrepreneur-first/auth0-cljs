@@ -1,4 +1,4 @@
-(defproject entrepreneur-first/auth0-cljs "0.1.9"
+(defproject entrepreneur-first/auth0-cljs "0.1.10-SNAPSHOT"
 
   :url "http://joinef.com"
 
