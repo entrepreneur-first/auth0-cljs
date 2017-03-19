@@ -18,20 +18,36 @@
                    (assoc :query {:returnTo (.-href location) :client_id auth0-client-id}))))))
 
 (defn show-login-modal!
-  "Pops up the Auth0 login modal."
+  "Pops up the Auth0 login modal.
+
+   In the case of a previous failed login, we capture the error message returned from the Auth0 server and
+   log it to the javascript console. We clear the error message from the URL hash to prevent us getting stuck
+   in an infinite loop."
   [lock callback-url overrides]
-  (.show
-   lock
-   (clj->js
-    (merge
-     {:authParams   {:scope       "openid name picture"
-                     :access_type "offline"
-                     :state       (pr-str {:href (.-hash (.-location js/window))})}
-      :callbackURL  callback-url
-      :responseType "token"
-      :closable     false
-      }
-     overrides))))
+  (let [hash  (.parseHash lock (.-hash (.-location js/window)))
+        error (when hash (aget hash "error_description"))]
+
+
+    (js/console.error error)
+
+    ;; There seems to be no way to show an error message with lock v9.
+    ;; This is available in auth v10, but we would need to create a new cljsjs version
+    ;; and deal with all the breaking API changes around how auth works.
+    (when error
+      (.replaceState js/history {} (.-title js/document) (.-pathname (.-location js/window))))
+
+    (.show
+     lock
+     (clj->js
+      (merge
+       {:authParams   {:scope       "openid name picture"
+                       :access_type "offline"
+                       :state       (pr-str {:href (.-hash (.-location js/window))})}
+        :callbackURL  callback-url
+        :responseType "token"
+        :closable     false
+        }
+       overrides)))))
 
 (defn attempt-signin!
   "Attempts to sign-in automagically,
