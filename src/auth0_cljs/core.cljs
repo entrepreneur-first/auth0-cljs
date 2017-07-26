@@ -108,7 +108,7 @@
         (fn [_data])
 
         (fn [_data]
-          (when-not (:impersonated @user/logged-in-user)
+          #_(when-not (:impersonated @user/logged-in-user)
             (.log js/console "SSO LOGOUT")
             (reset! user/logged-in-user nil)
             (user/clear-user-token!)
