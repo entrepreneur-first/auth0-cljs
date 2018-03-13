@@ -122,7 +122,8 @@
                     (let [access-token (.-accessToken auth-result)
                           state (.-state auth-result)]
                       (user/set-user-token! access-token)
-                      (set! (.-href location) (get (safe-read-edn state) :href "")))))
+                      (set! (.-href location) (get (safe-read-edn state) :href ""))
+                      (.reload location))))
                 (.on "authorization_error"
                   (fn [error]
                     (js/console.error (str "authorization_error: " error))
